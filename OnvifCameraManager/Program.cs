@@ -77,6 +77,7 @@ class Program
             var deviceInfo = await client.GetDeviceInformationAsync();
             Console.WriteLine($"Connected to Camera: {deviceInfo.Manufacturer} {deviceInfo.Model}\n");
 
+
             var profilesResponse = await client.GetProfilesAsync();
            //Console.WriteLine($"Found {profilesResponse.Profiles.Length} profile(s).");
 
@@ -87,19 +88,63 @@ class Program
             string fullRtspUrl = credentialManager.InsertCredentialsIntoRtspUrl(uri.Uri, user, pass);
             Console.WriteLine($"Using Camera RTSP URL: {fullRtspUrl}\n");
 
-            Console.WriteLine("Starting image capture every 5 seconds. Press ESC to stop.\n");
 
-            var captureTask = Task.Run(() =>
+            Console.WriteLine("Select capture mode:");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("1: ");
+            Console.ResetColor();
+            Console.WriteLine("Save frames every N seconds");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("2: ");
+            Console.ResetColor();
+            Console.WriteLine("Record 10-second video on motion detection");
+            Console.WriteLine();
+            Console.Write("Enter option: ");
+            string option = Console.ReadLine();
+
+
+
+            if (option == "1")
             {
-                while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Escape)
-                {
-                    FrameCapture.CaptureAndSaveFrame(fullRtspUrl);
-                    Thread.Sleep(5000);
-                }
-            });
+                Console.WriteLine("Capturing frames every 5 seconds. Press ESC to stop.");
 
-            await captureTask;
-            Console.WriteLine("\n Capture session ended.");
+                var captureTask = Task.Run(() =>
+                {
+                    while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Escape)
+                    {
+                        FrameCapture.CaptureAndSaveFrame(fullRtspUrl);
+                        Thread.Sleep(5000); // You can adjust interval
+                    }
+                });
+
+                await captureTask;
+            }
+            else if (option == "2")
+            {
+                Console.WriteLine("Monitoring for motion. Press ESC to stop.");
+
+                var motionTask = Task.Run(() =>
+                {
+                    while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Escape)
+                    {
+                        if (MotionDetector.DetectMotion(fullRtspUrl))
+                        {
+                            VideoRecorder.RecordSegment(fullRtspUrl, @"C:\temp\capture");
+                        }
+
+                        Thread.Sleep(5000); // Detection interval
+                    }
+                });
+
+                await motionTask;
+            }
+            else
+            {
+                Console.WriteLine("Invalid option selected. Exiting.");
+            }
+
+
+
         }
         catch (Exception ex)
         {
