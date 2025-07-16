@@ -26,7 +26,7 @@ This is a .NET console application that:
 ## Running the App
 
 1. Clone the repository:
-   git clone https://github.com/yourusername/onvif-capture-tool.git
+   git clone https://github.com/McartagenovaM/OnvifCameraManager.git
 
 2. Build and run:
   dotnet build
