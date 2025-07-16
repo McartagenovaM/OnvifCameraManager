@@ -20,6 +20,13 @@ class Program
         Console.ResetColor();
         Console.WriteLine();
         Console.WriteLine("Discovering ONVIF cameras on the network...");
+        Console.WriteLine();
+
+        Environment.SetEnvironmentVariable("OPENCV_FFMPEG_DEBUG", "0");
+        Environment.SetEnvironmentVariable("OPENCV_VIDEOIO_DEBUG", "0");
+        Environment.SetEnvironmentVariable("OPENCV_LOG_LEVEL", "OFF");
+
+
         var devices = await OnvifDiscoveryClient.DiscoverAsync();
 
         if (devices.Count == 0)
@@ -32,9 +39,12 @@ class Program
 
         for (int i = 0; i < devices.Count; i++)
         {
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($"{i + 1}: ");
+            Console.ResetColor();
             Console.WriteLine($"{devices[i].Addresses[0]}");
         }
+        Console.WriteLine();
 
         Console.Write("\nSelect a camera (number): ");
         if (!int.TryParse(Console.ReadLine(), out int idx) || idx < 1 || idx > devices.Count)
@@ -61,6 +71,7 @@ class Program
         {
             client = new SimpleOnvifClient(serviceUrl, user!, pass!);
             Console.WriteLine("Initializing ONVIF client...");
+            Console.WriteLine();
 
             // Get brand and model
             var deviceInfo = await client.GetDeviceInformationAsync();
@@ -76,14 +87,14 @@ class Program
             string fullRtspUrl = credentialManager.InsertCredentialsIntoRtspUrl(uri.Uri, user, pass);
             Console.WriteLine($"Using Camera RTSP URL: {fullRtspUrl}\n");
 
-            Console.WriteLine("Starting image capture every 15 seconds. Press ESC to stop.\n");
+            Console.WriteLine("Starting image capture every 5 seconds. Press ESC to stop.\n");
 
             var captureTask = Task.Run(() =>
             {
                 while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Escape)
                 {
                     FrameCapture.CaptureAndSaveFrame(fullRtspUrl);
-                    Thread.Sleep(15000);
+                    Thread.Sleep(5000);
                 }
             });
 
