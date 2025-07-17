@@ -8,6 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Owl.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Owl.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
     <PackageReference Include="SharpOnvifClient" Version="0.4.1" />

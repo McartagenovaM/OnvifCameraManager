@@ -1,6 +1,7 @@
-﻿using OpenCvSharp;           // OpenCV wrapper for .NET: enables video frame capture and processing
+﻿using OpenCvSharp;                         // OpenCV wrapper for .NET
 using System;
 using System.IO;
+using OnvifCameraManager.Services;         // Required for OverlayHelper
 
 namespace OnvifCameraManager.Services
 {
@@ -9,47 +10,45 @@ namespace OnvifCameraManager.Services
     /// </summary>
     public static class VideoRecorder
     {
-        // <summary>
-        // Records a fixed-length video segment from a given RTSP source.
-        // </summary>
-        // <param name="rtspUrl">RTSP URL with embedded credentials</param>
-        // <param name="outputDir">Directory where the video will be saved</param>
-        // <param name="seconds">Duration of the recorded segment in seconds (default = 10)</param>
+        /// <summary>
+        /// Records a fixed-length video segment from a given RTSP source.
+        /// </summary>
+        /// <param name="rtspUrl">RTSP URL with embedded credentials</param>
+        /// <param name="outputDir">Directory where the video will be saved</param>
+        /// <param name="seconds">Duration of the recorded segment in seconds (default = 10)</param>
         public static void RecordSegment(string rtspUrl, string outputDir, int seconds = 10)
         {
             // Ensure the output directory exists
             Directory.CreateDirectory(outputDir);
 
-            // Open the video stream
+            // Open the RTSP video stream
             using var capture = new VideoCapture(rtspUrl);
             if (!capture.IsOpened())
             {
-                // Error if stream can't be opened
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("RTSP stream not available for recording.");
                 Console.ResetColor();
                 return;
             }
 
-            // Get video stream properties
-            int fps = (int)capture.Fps;                     // Frames per second
-            int width = capture.FrameWidth;                // Frame width in pixels
-            int height = capture.FrameHeight;              // Frame height in pixels
-            int frameCount = fps * seconds;                // Total number of frames to record
+            // Extract stream properties (FPS, resolution)
+            int fps = (int)capture.Fps;
+            int width = capture.FrameWidth;
+            int height = capture.FrameHeight;
+            int frameCount = fps * seconds;
 
             // Generate a timestamped filename
             string timestamp = DateTime.Now.ToString("ddMMyyHHmmss");
             string filePath = Path.Combine(outputDir, $"motion_{timestamp}.avi");
 
-            // Initialize the video writer using MJPG codec
+            // Initialize the video writer with MJPG codec
             using var writer = new VideoWriter(
-                filePath,        // Output file path
-                FourCC.MJPG,     // Codec
-                fps,             // Frame rate
-                new Size(width, height) // Frame size
+                filePath,
+                FourCC.MJPG,
+                fps,
+                new Size(width, height)
             );
 
-            // Check if writer is ready
             if (!writer.IsOpened())
             {
                 Console.WriteLine("Could not open VideoWriter.");
@@ -58,22 +57,26 @@ namespace OnvifCameraManager.Services
 
             Console.WriteLine("Recording video segment...");
 
-            // Loop to capture and write each frame
+            // Frame capture loop
             using var frame = new Mat();
             for (int i = 0; i < frameCount; i++)
             {
                 if (!capture.Read(frame) || frame.Empty())
-                    break;  // Stop recording if frame is not available
+                    break;
 
-                writer.Write(frame); // Write frame to output video
+                // Apply logo and text overlays using shared helper
+                OverlayHelper.ApplyLogoAndText(frame);
+
+                // Write frame to output video
+                writer.Write(frame);
             }
 
-            // Final confirmation
+            // Final output confirmation
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"Video segment saved: {filePath}");
             Console.ResetColor();
 
-            capture.Release(); // Clean up video stream
+            capture.Release();
         }
     }
 }
